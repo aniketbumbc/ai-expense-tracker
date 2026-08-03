@@ -17,7 +17,7 @@ app.use(
   cors({
     origin: [
       'http://localhost:5173', // local dev
-      'https://be-server-production.up.railway.app', // deployed frontend
+      'https://be-server-production.up.railway.app/', // deployed frontend
     ],
   }),
 );

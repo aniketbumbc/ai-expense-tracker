@@ -17,21 +17,16 @@ app.use(
   cors({
     origin: [
       'http://localhost:5173', // local dev
-      'https://be-server-production.up.railway.app/', // deployed frontend
+      'http://localhost:5174', // local dev (vite fallback port)
+      'https://chat-ui-production-cb98.up.railway.app', // deployed frontend
     ],
+    credentials: true,
   }),
 );
 const PORT = process.env.PORT || 4100;
 
 // single shared db instance for auth routes (and passed into the agent factory)
 const db = initDb('./expenses.db');
-
-app.use(
-  cors({
-    origin: ['http://localhost:5173', 'https://your-app.com'],
-    credentials: true,
-  }),
-);
 
 // ---- auth routes ----
 

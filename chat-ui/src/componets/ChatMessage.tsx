@@ -1,5 +1,5 @@
 import { Wrench } from 'lucide-react';
-import type { StreamMessage } from '../type.ts';
+import type { StreamMessage } from '../types.ts';
 import { ExpenseChart } from './ExpenseChart.tsx';
 import { useAuth } from '@/lib/auth';
 

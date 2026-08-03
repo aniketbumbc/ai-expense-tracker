@@ -9,42 +9,7 @@ import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { API_BASE_URL } from '@/lib/config';
 import { Moon, Sun } from 'lucide-react';
-
-type StreamMessage =
-| {
-    id: string;
-    type: 'ai';
-    payload: { text: string };
-  }
-| {
-    id: string;
-    type: 'toolCall:start';
-    payload: {
-      name: string;
-      args: Record<string, any>;
-    };
-  }
-| {
-    id: string;
-    type: 'tool';
-    payload: {
-      name: string;
-      result: Record<string, any>;
-    };
-  }
-| {
-    id: string;
-    type: 'user';
-    payload: { text: string };
-  }
-  | {
-    id: string;
-    type: 'id';
-    payload: { error: string };
-  };
-
-
-
+import type { StreamMessage } from '../types.ts';
 
 
 export function ChatContainer() {

@@ -15,6 +15,7 @@ import {
   ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
+  type ChartConfig,
 } from './ui/chart';
 import { useTheme } from '@/lib/theme';
 

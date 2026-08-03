@@ -1,4 +1,3 @@
-import React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { ChatInput } from './ChatInput';
@@ -14,7 +13,7 @@ import type { StreamMessage } from '../types.ts';
 
 export function ChatContainer() {
   const messageEndRef = useRef<HTMLDivElement>(null);
-  const [query, setQuery] = useState<string>('');
+  const [, setQuery] = useState<string>('');
   const { token, user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 

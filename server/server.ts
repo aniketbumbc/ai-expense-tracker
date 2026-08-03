@@ -13,7 +13,14 @@ import {
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      'http://localhost:5173', // local dev
+      'https://be-server-production.up.railway.app/', // deployed frontend
+    ],
+  }),
+);
 const PORT = process.env.PORT || 4100;
 
 // single shared db instance for auth routes (and passed into the agent factory)

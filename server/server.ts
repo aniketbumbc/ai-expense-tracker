@@ -31,25 +31,34 @@ const db = initDb('./expenses.db');
 // ---- auth routes ----
 
 app.post('/register', async (req, res) => {
-  const { username, password } = req.body ?? {};
+  const { username, password, email } = req.body ?? {};
 
-  if (!username || !password) {
-    return res.status(400).json({ error: 'username and password required' });
+  if (!username || !password || !email) {
+    return res
+      .status(400)
+      .json({ error: 'username, password and email required' });
   }
 
   try {
     const hash = await hashPassword(password);
     const info = db
-      .prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)')
-      .run(username, hash);
+      .prepare(
+        'INSERT INTO users (username, password_hash, email) VALUES (?, ?, ?)',
+      )
+      .run(username, hash, email);
 
     const userId = Number(info.lastInsertRowid);
     const token = signToken(userId);
-    return res.status(201).json({ token, user: { id: userId, username } });
+    return res
+      .status(201)
+      .json({ token, user: { id: userId, username, email } });
   } catch (err: any) {
-    // UNIQUE constraint on username
-    if (String(err?.message).includes('UNIQUE')) {
+    const message = String(err?.message);
+    if (message.includes('users.username')) {
       return res.status(409).json({ error: 'username already taken' });
+    }
+    if (message.includes('users.email') || message.includes('idx_users_email')) {
+      return res.status(409).json({ error: 'email already in use' });
     }
     console.error(err);
     return res.status(500).json({ error: 'could not register' });
@@ -64,8 +73,10 @@ app.post('/login', async (req, res) => {
   }
 
   const row = db
-    .prepare('SELECT id, password_hash FROM users WHERE username = ?')
-    .get(username) as { id: number; password_hash: string } | undefined;
+    .prepare('SELECT id, password_hash, email FROM users WHERE username = ?')
+    .get(username) as
+    | { id: number; password_hash: string; email: string | null }
+    | undefined;
 
   if (!row) {
     return res.status(401).json({ error: 'invalid credentials' });
@@ -77,7 +88,10 @@ app.post('/login', async (req, res) => {
   }
 
   const token = signToken(row.id);
-  return res.json({ token, user: { id: row.id, username } });
+  return res.json({
+    token,
+    user: { id: row.id, username, email: row.email },
+  });
 });
 
 // Stateless JWT: logout is a client-side token discard.

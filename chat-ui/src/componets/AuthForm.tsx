@@ -5,6 +5,7 @@ export function AuthForm() {
   const { login, register } = useAuth()
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -14,8 +15,12 @@ export function AuthForm() {
     e.preventDefault()
     setError(null)
 
-    if (!username.trim() || !password) {
-      setError('Username and password are required')
+    if (!username.trim() || !password || (mode === 'register' && !email.trim())) {
+      setError(
+        mode === 'register'
+          ? 'Username, email and password are required'
+          : 'Username and password are required',
+      )
       return
     }
 
@@ -24,7 +29,7 @@ export function AuthForm() {
       if (mode === 'login') {
         await login(username.trim(), password)
       } else {
-        await register(username.trim(), password)
+        await register(username.trim(), password, email.trim())
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -85,6 +90,25 @@ export function AuthForm() {
               className="bg-input text-foreground placeholder-muted-foreground rounded-xl px-4 py-3 border border-border focus:outline-none focus:border-purple-500 transition-colors text-sm"
             />
           </div>
+
+          {mode === 'register' && (
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="email"
+                className="text-xs font-medium text-muted-foreground">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="jane@example.com"
+                className="bg-input text-foreground placeholder-muted-foreground rounded-xl px-4 py-3 border border-border focus:outline-none focus:border-purple-500 transition-colors text-sm"
+              />
+            </div>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <label

@@ -4,13 +4,14 @@ import { API_BASE_URL } from './config'
 type User = {
   id: number
   username: string
+  email: string | null
 }
 
 type AuthContextValue = {
   token: string | null
   user: User | null
   login: (username: string, password: string) => Promise<void>
-  register: (username: string, password: string) => Promise<void>
+  register: (username: string, password: string, email: string) => Promise<void>
   logout: () => void
 }
 
@@ -18,13 +19,12 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 async function requestAuth(
   path: 'login' | 'register',
-  username: string,
-  password: string,
+  body: { username: string; password: string; email?: string },
 ) {
   const res = await fetch(`${API_BASE_URL}/${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify(body),
   })
 
   const data = await res.json().catch(() => ({}))
@@ -53,12 +53,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const login = useCallback(async (username: string, password: string) => {
-    persist(await requestAuth('login', username, password))
+    persist(await requestAuth('login', { username, password }))
   }, [])
 
-  const register = useCallback(async (username: string, password: string) => {
-    persist(await requestAuth('register', username, password))
-  }, [])
+  const register = useCallback(
+    async (username: string, password: string, email: string) => {
+      persist(await requestAuth('register', { username, password, email }))
+    },
+    [],
+  )
 
   const logout = useCallback(() => {
     const currentToken = token

@@ -10,7 +10,11 @@ type User = {
 type AuthContextValue = {
   token: string | null
   user: User | null
-  login: (username: string, password: string) => Promise<void>
+  login: (
+    username: string,
+    password: string,
+    keepSignedIn?: boolean,
+  ) => Promise<void>
   register: (username: string, password: string, email: string) => Promise<void>
   logout: () => void
 }
@@ -37,28 +41,39 @@ async function requestAuth(
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem('authToken'),
+  const [token, setToken] = useState<string | null>(
+    () => localStorage.getItem('authToken') || sessionStorage.getItem('authToken'),
   )
   const [user, setUser] = useState<User | null>(() => {
-    const raw = localStorage.getItem('authUser')
+    const raw =
+      localStorage.getItem('authUser') || sessionStorage.getItem('authUser')
     return raw ? JSON.parse(raw) : null
   })
 
-  const persist = (data: { token: string; user: User }) => {
-    localStorage.setItem('authToken', data.token)
-    localStorage.setItem('authUser', JSON.stringify(data.user))
+  const persist = (
+    data: { token: string; user: User },
+    keepSignedIn: boolean,
+  ) => {
+    const storage = keepSignedIn ? localStorage : sessionStorage
+    const other = keepSignedIn ? sessionStorage : localStorage
+    storage.setItem('authToken', data.token)
+    storage.setItem('authUser', JSON.stringify(data.user))
+    other.removeItem('authToken')
+    other.removeItem('authUser')
     setToken(data.token)
     setUser(data.user)
   }
 
-  const login = useCallback(async (username: string, password: string) => {
-    persist(await requestAuth('login', { username, password }))
-  }, [])
+  const login = useCallback(
+    async (username: string, password: string, keepSignedIn = true) => {
+      persist(await requestAuth('login', { username, password }), keepSignedIn)
+    },
+    [],
+  )
 
   const register = useCallback(
     async (username: string, password: string, email: string) => {
-      persist(await requestAuth('register', { username, password, email }))
+      persist(await requestAuth('register', { username, password, email }), true)
     },
     [],
   )
@@ -67,6 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const currentToken = token
     localStorage.removeItem('authToken')
     localStorage.removeItem('authUser')
+    sessionStorage.removeItem('authToken')
+    sessionStorage.removeItem('authUser')
     setToken(null)
     setUser(null)
 

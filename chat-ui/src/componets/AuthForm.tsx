@@ -32,7 +32,7 @@ export function AuthForm() {
     setLoading(true)
     try {
       if (mode === 'login') {
-        await login(username.trim(), password)
+        await login(username.trim(), password, keepSignedIn)
       } else {
         await register(username.trim(), password, email.trim())
       }

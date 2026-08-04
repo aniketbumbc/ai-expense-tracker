@@ -55,7 +55,7 @@ app.use(
 const PORT = process.env.PORT || 4100;
 
 // single shared db instance for auth routes (and passed into the agent factory)
-const db = initDb('./expenses.db');
+const db = initDb(process.env.DB_PATH || './expenses.db');
 
 // ---- auth routes ----
 

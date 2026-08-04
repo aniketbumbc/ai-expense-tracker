@@ -10,6 +10,7 @@ if (!EMAIL_USER || !EMAIL_APP_PASSWORD) {
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
+  pool: true,
   auth: {
     user: EMAIL_USER,
     pass: EMAIL_APP_PASSWORD,

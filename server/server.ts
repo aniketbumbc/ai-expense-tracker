@@ -27,14 +27,28 @@ const forgotPasswordLimiter = rateLimit({
 });
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(express.json());
+const ALLOWED_ORIGINS = [
+  'https://chat-ui-production-cb98.up.railway.app', // deployed frontend
+];
+const LOCALHOST_ORIGIN_RE = /^http:\/\/localhost:\d+$/;
+
 app.use(
   cors({
-    origin: [
-      'http://localhost:5173', // local dev
-      'http://localhost:5174', // local dev (vite fallback port)
-      'https://chat-ui-production-cb98.up.railway.app', // deployed frontend
-    ],
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      if (
+        !origin ||
+        LOCALHOST_ORIGIN_RE.test(origin) ||
+        ALLOWED_ORIGINS.includes(origin)
+      ) {
+        return callback(null, true);
+      }
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   }),
 );
@@ -143,18 +157,15 @@ app.post('/auth/forgot-password', forgotPasswordLimiter, async (req, res) => {
 
   const resetLink = `${FRONTEND_URL}/reset-password?token=${rawToken}`;
 
-  try {
-    await sendMail(
-      email,
-      'Reset your Expense Tracker password',
-      `<p>Click the link below to reset your password. This link expires in 5 minutes.</p>
-       <p><a href="${resetLink}">${resetLink}</a></p>
-       <p>If you didn't request this, you can ignore this email.</p>`,
-    );
-  } catch (err) {
+  sendMail(
+    email,
+    'Reset your Expense Tracker password',
+    `<p>Click the link below to reset your password. This link expires in 5 minutes.</p>
+     <p><a href="${resetLink}">${resetLink}</a></p>
+     <p>If you didn't request this, you can ignore this email.</p>`,
+  ).catch((err) => {
     console.error('Failed to send reset email:', err);
-    return res.status(500).json({ error: 'could not send reset email' });
-  }
+  });
 
   return res.json(genericResponse);
 });

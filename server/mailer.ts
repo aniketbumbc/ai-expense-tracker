@@ -25,3 +25,11 @@ export const sendMail = async (to: string, subject: string, html: string) => {
     html,
   });
 };
+
+// Verifies SMTP connectivity/credentials without sending an email.
+// Useful for confirming EMAIL_USER/EMAIL_APP_PASSWORD are valid in a given
+// deployment (e.g. Railway) since Gmail auth failures otherwise only show up
+// as a silently-swallowed error on the first real send.
+export const verifyMailTransport = async () => {
+  await transporter.verify();
+};

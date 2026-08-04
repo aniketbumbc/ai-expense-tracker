@@ -1,35 +1,37 @@
 import 'dotenv/config';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-const EMAIL_USER = process.env.EMAIL_USER;
-const EMAIL_APP_PASSWORD = process.env.EMAIL_APP_PASSWORD;
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+// Resend's shared test sender — works without a verified domain, but only
+// delivers to the email address that owns the API key's Resend account.
+const EMAIL_FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 
-if (!EMAIL_USER || !EMAIL_APP_PASSWORD) {
-  throw new Error('EMAIL_USER or EMAIL_APP_PASSWORD is not set in .env');
+if (!RESEND_API_KEY) {
+  throw new Error('RESEND_API_KEY is not set in .env');
 }
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  pool: true,
-  auth: {
-    user: EMAIL_USER,
-    pass: EMAIL_APP_PASSWORD,
-  },
-});
+const resend = new Resend(RESEND_API_KEY);
 
 export const sendMail = async (to: string, subject: string, html: string) => {
-  await transporter.sendMail({
-    from: EMAIL_USER,
+  const { error } = await resend.emails.send({
+    from: EMAIL_FROM,
     to,
     subject,
     html,
   });
+
+  if (error) {
+    throw new Error(`Resend error: ${error.name} - ${error.message}`);
+  }
 };
 
-// Verifies SMTP connectivity/credentials without sending an email.
-// Useful for confirming EMAIL_USER/EMAIL_APP_PASSWORD are valid in a given
-// deployment (e.g. Railway) since Gmail auth failures otherwise only show up
-// as a silently-swallowed error on the first real send.
+// Confirms the Resend API key is valid without sending an email.
+// Useful for checking a deployment's RESEND_API_KEY (e.g. Railway) since a
+// bad/missing key otherwise only surfaces as a silently-swallowed error on
+// the first real send.
 export const verifyMailTransport = async () => {
-  await transporter.verify();
+  const { error } = await resend.apiKeys.list();
+  if (error) {
+    throw new Error(`Resend error: ${error.name} - ${error.message}`);
+  }
 };

@@ -4,7 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { initDb } from './db.js';
 import { createAgent } from './agent';
 import { StreamMessage } from './types';
-import { sendMail } from './mailer';
+import { sendMail, verifyMailTransport } from './mailer';
 import {
   hashPassword,
   verifyPassword,
@@ -58,6 +58,20 @@ const PORT = process.env.PORT || 4100;
 const db = initDb('./expenses.db');
 
 // ---- auth routes ----
+
+// Checks SMTP connectivity/credentials without sending an email — hit this
+// after deploying to confirm EMAIL_USER/EMAIL_APP_PASSWORD are set correctly
+// on that environment (e.g. Railway), since a bad Gmail app password
+// otherwise only surfaces as a silent failure on /auth/forgot-password.
+app.get('/health/mail', async (_req, res) => {
+  try {
+    await verifyMailTransport();
+    return res.json({ ok: true });
+  } catch (err: any) {
+    console.error('Mail transport verification failed:', err?.code ?? err?.message ?? err);
+    return res.status(503).json({ ok: false, error: 'mail transport unavailable' });
+  }
+});
 
 app.post('/register', async (req, res) => {
   const { username, password, email } = req.body ?? {};
@@ -164,7 +178,10 @@ app.post('/auth/forgot-password', forgotPasswordLimiter, async (req, res) => {
      <p><a href="${resetLink}">${resetLink}</a></p>
      <p>If you didn't request this, you can ignore this email.</p>`,
   ).catch((err) => {
-    console.error('Failed to send reset email:', err);
+    console.error(
+      `Failed to send reset email to user ${user.id}:`,
+      err?.code ?? err?.message ?? err,
+    );
   });
 
   return res.json(genericResponse);

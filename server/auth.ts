@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import type { Request, Response, NextFunction } from 'express';
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -20,6 +21,18 @@ export const verifyPassword = async (
   hash: string,
 ): Promise<boolean> => {
   return bcrypt.compare(plain, hash);
+};
+
+// ---- password reset tokens ----
+// The raw token is emailed to the user and never stored; only its hash is
+// kept in the DB so a leaked/stolen DB row can't be used to reset a password.
+
+export const generateResetToken = (): string => {
+  return crypto.randomBytes(32).toString('hex');
+};
+
+export const hashResetToken = (token: string): string => {
+  return crypto.createHash('sha256').update(token).digest('hex');
 };
 
 // ---- token ----

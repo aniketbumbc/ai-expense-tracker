@@ -1,15 +1,30 @@
 import express from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import { initDb } from './db.js';
 import { createAgent } from './agent';
 import { StreamMessage } from './types';
+import { sendMail } from './mailer';
 import {
   hashPassword,
   verifyPassword,
   signToken,
   requireAuth,
+  generateResetToken,
+  hashResetToken,
   type AuthedRequest,
 } from './auth';
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const RESET_TOKEN_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, //
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many reset requests, please try again later' },
+});
 
 const app = express();
 app.use(express.json());
@@ -57,7 +72,10 @@ app.post('/register', async (req, res) => {
     if (message.includes('users.username')) {
       return res.status(409).json({ error: 'username already taken' });
     }
-    if (message.includes('users.email') || message.includes('idx_users_email')) {
+    if (
+      message.includes('users.email') ||
+      message.includes('idx_users_email')
+    ) {
       return res.status(409).json({ error: 'email already in use' });
     }
     console.error(err);
@@ -92,6 +110,87 @@ app.post('/login', async (req, res) => {
     token,
     user: { id: row.id, username, email: row.email },
   });
+});
+
+app.post('/auth/forgot-password', forgotPasswordLimiter, async (req, res) => {
+  const { email } = req.body ?? {};
+
+  if (!email) {
+    return res.status(400).json({ error: 'email required' });
+  }
+
+  // Always respond the same way regardless of whether the email exists,
+  // so this endpoint can't be used to discover registered accounts.
+  const genericResponse = {
+    message: 'If that email is registered, a reset link has been sent.',
+  };
+
+  const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email) as
+    | { id: number }
+    | undefined;
+
+  if (!user) {
+    return res.json(genericResponse);
+  }
+
+  const rawToken = generateResetToken();
+  const tokenHash = hashResetToken(rawToken);
+  const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS).toISOString();
+
+  db.prepare(
+    'UPDATE users SET reset_token_hash = ?, reset_token_expires_at = ? WHERE id = ?',
+  ).run(tokenHash, expiresAt, user.id);
+
+  const resetLink = `${FRONTEND_URL}/reset-password?token=${rawToken}`;
+
+  try {
+    await sendMail(
+      email,
+      'Reset your Expense Tracker password',
+      `<p>Click the link below to reset your password. This link expires in 5 minutes.</p>
+       <p><a href="${resetLink}">${resetLink}</a></p>
+       <p>If you didn't request this, you can ignore this email.</p>`,
+    );
+  } catch (err) {
+    console.error('Failed to send reset email:', err);
+    return res.status(500).json({ error: 'could not send reset email' });
+  }
+
+  return res.json(genericResponse);
+});
+
+app.post('/auth/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body ?? {};
+
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: 'token and newPassword required' });
+  }
+
+  const tokenHash = hashResetToken(token);
+
+  const user = db
+    .prepare(
+      'SELECT id, reset_token_expires_at FROM users WHERE reset_token_hash = ?',
+    )
+    .get(tokenHash) as
+    | { id: number; reset_token_expires_at: string | null }
+    | undefined;
+
+  if (!user || !user.reset_token_expires_at) {
+    return res.status(400).json({ error: 'invalid or expired reset link' });
+  }
+
+  if (new Date(user.reset_token_expires_at).getTime() < Date.now()) {
+    return res.status(400).json({ error: 'invalid or expired reset link' });
+  }
+
+  const hash = await hashPassword(newPassword);
+
+  db.prepare(
+    'UPDATE users SET password_hash = ?, reset_token_hash = NULL, reset_token_expires_at = NULL WHERE id = ?',
+  ).run(hash, user.id);
+
+  return res.json({ message: 'password updated successfully' });
 });
 
 // Stateless JWT: logout is a client-side token discard.

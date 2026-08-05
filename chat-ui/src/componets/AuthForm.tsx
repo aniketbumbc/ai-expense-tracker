@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { Zap, Eye, EyeOff, BookOpen } from 'lucide-react'
+import { Zap, Eye, EyeOff, BookOpen, Moon, Sun } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
+import { useTheme } from '@/lib/theme'
 import { API_BASE_URL } from '@/lib/config'
 import { AboutModal } from './AboutModal'
 
 export function AuthForm() {
   const { login, register } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login')
   const [showAbout, setShowAbout] = useState(false)
   const [username, setUsername] = useState('')
@@ -87,13 +89,26 @@ export function AuthForm() {
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      <button
-        type="button"
-        onClick={() => setShowAbout(true)}
-        className="fixed right-5 top-5 z-30 flex items-center gap-1.5 rounded-full border border-purple-500 bg-card px-4 py-2 text-sm font-medium text-foreground shadow-lg hover:scale-105 hover:shadow-purple-500/30 active:scale-95 transition-all cursor-pointer">
-        <BookOpen className="h-4 w-4" />
-        How it works
-      </button>
+      <div className="fixed right-5 top-5 z-30 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setShowAbout(true)}
+          className="flex items-center gap-1.5 rounded-full border border-purple-500 bg-card px-4 py-2 text-sm font-medium text-foreground shadow-lg hover:scale-105 hover:shadow-purple-500/30 active:scale-95 transition-all cursor-pointer">
+          <BookOpen className="h-4 w-4" />
+          How it works
+        </button>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label="Toggle theme"
+          className="p-2.5 rounded-full bg-card text-foreground border border-purple-500 shadow-lg cursor-pointer hover:scale-105 hover:shadow-purple-500/30 active:scale-95 transition-all">
+          {theme === 'dark' ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Moon className="h-4 w-4" />
+          )}
+        </button>
+      </div>
 
       {showAbout && (
         <AboutModal

@@ -153,8 +153,12 @@ export function ChatContainer() {
           <div className="flex items-center gap-4">
             {user && (
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-full bg-linear-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center shrink-0 text-sm font-bold text-white shadow-lg">
-                  {user.username.charAt(0).toUpperCase()}
+                <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 shadow-lg border-2 border-purple-500">
+                  <img
+                    src="/user-profile.png"
+                    alt="User avatar"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <span className="text-sm font-medium text-foreground hidden sm:inline">
                   {user.username.charAt(0).toUpperCase() +
@@ -166,7 +170,7 @@ export function ChatContainer() {
               type="button"
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="p-2.5 rounded-full bg-muted text-muted-foreground border border-border cursor-pointer hover:text-foreground hover:shadow-md hover:scale-105 active:scale-95 transition-all">
+              className="p-2.5 rounded-full bg-muted text-muted-foreground border border-purple-500 cursor-pointer hover:text-foreground hover:shadow-md hover:scale-105 active:scale-95 transition-all">
               {theme === 'dark' ? (
                 <Sun className="w-4.5 h-4.5" />
               ) : (
@@ -176,7 +180,7 @@ export function ChatContainer() {
             <button
               type="button"
               onClick={logout}
-              className="px-4 py-2 rounded-full text-sm font-medium bg-muted text-muted-foreground border border-border cursor-pointer hover:text-destructive hover:border-destructive/40 hover:shadow-md hover:scale-105 active:scale-95 transition-all">
+              className="px-4 py-2 rounded-full text-sm font-medium bg-muted text-muted-foreground border border-purple-500 cursor-pointer hover:text-destructive hover:border-destructive/40 hover:shadow-md hover:scale-105 active:scale-95 transition-all">
               Log out
             </button>
           </div>

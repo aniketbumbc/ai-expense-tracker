@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { Zap, Eye, EyeOff, Mail } from 'lucide-react'
+import { Zap, Eye, EyeOff, BookOpen } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { API_BASE_URL } from '@/lib/config'
+import { AboutModal } from './AboutModal'
 
 export function AuthForm() {
   const { login, register } = useAuth()
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login')
+  const [showAbout, setShowAbout] = useState(false)
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -85,6 +87,25 @@ export function AuthForm() {
 
   return (
     <div className="flex min-h-screen w-full bg-background">
+      <button
+        type="button"
+        onClick={() => setShowAbout(true)}
+        className="fixed right-5 top-5 z-30 flex items-center gap-1.5 rounded-full border border-purple-500 bg-card px-4 py-2 text-sm font-medium text-foreground shadow-lg hover:scale-105 hover:shadow-purple-500/30 active:scale-95 transition-all cursor-pointer">
+        <BookOpen className="h-4 w-4" />
+        How it works
+      </button>
+
+      {showAbout && (
+        <AboutModal
+          onClose={() => setShowAbout(false)}
+          onGetStarted={() => {
+            setShowAbout(false)
+            setMode('register')
+            setError(null)
+          }}
+        />
+      )}
+
       <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between overflow-hidden bg-linear-to-br from-purple-600 via-pink-600 to-orange-500 p-12 text-white">
         <div>
           <div className="flex items-center gap-3">
@@ -294,25 +315,6 @@ export function AuthForm() {
                     : 'Create account'}
               </button>
             </form>
-          )}
-
-          {mode === 'login' && (
-            <>
-              <div className="my-6 flex items-center gap-4">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs font-medium text-muted-foreground">
-                  OR
-                </span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
-
-              <button
-                type="button"
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors cursor-pointer">
-                <Mail className="h-4 w-4" />
-                Continue with email link
-              </button>
-            </>
           )}
 
           {mode !== 'forgot' && (

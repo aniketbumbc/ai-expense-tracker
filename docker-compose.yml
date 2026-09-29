@@ -28,6 +28,6 @@ volumes:
   api-data:
 
 networks:
-  proxy:
+  caddy:
     external: true
-    name: ${PROXY_NETWORK:-caddy}
+    name: proxy

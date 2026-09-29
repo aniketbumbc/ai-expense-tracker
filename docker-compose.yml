@@ -1,33 +1,40 @@
-# Caddy (running in Docker on the VPS) reaches these containers over the
-# shared proxy network by their aliases: pennywise-web:80, pennywise-api:4100.
 services:
-  api:
-    build: ./server
-    restart: unless-stopped
-    env_file: ./server/.env
+  backend:
+    build:
+      context: ./server
+    container_name: "pennywise-api"
+    env_file:
+      - ./server/.env
     environment:
-      PORT: 4100
-      DB_PATH: /data/expenses.db
+      - PORT=4100
+      - DB_PATH=/data/expenses.db
     volumes:
       - api-data:/data
+    expose:
+      - "4100"
+    restart: unless-stopped
     networks:
-      proxy:
-        aliases: [pennywise-api]
+      - default
+      - web
 
-  web:
+  frontend:
     build:
       context: ./chat-ui
       args:
         VITE_API_URL: https://api.aipennywisetrackr.com
+    container_name: "pennywise-web"
+    expose:
+      - "80"                   # nginx inside the container
+    depends_on:
+      - backend
     restart: unless-stopped
     networks:
-      proxy:
-        aliases: [pennywise-web]
+      - default
+      - web
 
 volumes:
   api-data:
 
 networks:
-  caddy:
+  web:
     external: true
-    name: proxy

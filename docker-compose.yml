@@ -1,0 +1,37 @@
+# Images are built by GitHub Actions and pulled from GHCR.
+# `build:` lets you still build locally with `docker compose up -d --build`.
+# Caddy (running in Docker on the VPS) reaches these containers over the
+# shared proxy network by their aliases: pennywise-web:80, pennywise-api:4100.
+services:
+  api:
+    image: ghcr.io/aniketbumbc/ai-expense-tracker-api:${TAG:-latest}
+    build: ./server
+    restart: unless-stopped
+    env_file: ./server/.env
+    environment:
+      PORT: 4100
+      DB_PATH: /data/expenses.db
+    volumes:
+      - api-data:/data
+    networks:
+      proxy:
+        aliases: [pennywise-api]
+
+  web:
+    image: ghcr.io/aniketbumbc/ai-expense-tracker-web:${TAG:-latest}
+    build:
+      context: ./chat-ui
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:4100}
+    restart: unless-stopped
+    networks:
+      proxy:
+        aliases: [pennywise-web]
+
+volumes:
+  api-data:
+
+networks:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-caddy}

@@ -31,6 +31,8 @@ app.set('trust proxy', 1);
 app.use(express.json());
 const ALLOWED_ORIGINS = [
   'https://chat-ui-production-cb98.up.railway.app', // deployed frontend
+  'https://aipennywisetrackr.com', // VPS frontend
+  FRONTEND_URL,
 ];
 const LOCALHOST_ORIGIN_RE = /^http:\/\/localhost:\d+$/;
 
